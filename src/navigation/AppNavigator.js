@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import AuthStack from './AuthStack';
 import DrawerNavigator from './DrawerNavigator';
+import TaskFormScreen from '../screens/app/TaskFormScreen';
 
 const RootStack = createNativeStackNavigator();
 
@@ -36,18 +37,13 @@ export default function AppNavigator() {
         component={DrawerNavigator}
         options={{ headerShown: false }}
       />
-      {/* Adicione aqui as telas de criar/editar. Exemplo:
       <RootStack.Screen
-        name="CreateTask"
-        component={CreateTaskScreen}
-        options={{ title: 'Nova tarefa' }}
+        name="TaskForm"
+        component={TaskFormScreen}
+        options={({ route }) => ({
+          title: route.params?.task ? 'Editar tarefa' : 'Nova tarefa',
+        })}
       />
-      <RootStack.Screen
-        name="EditTask"
-        component={EditTaskScreen}
-        options={{ title: 'Editar tarefa' }}
-      />
-      */}
     </RootStack.Navigator>
   );
 }

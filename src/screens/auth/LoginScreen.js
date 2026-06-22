@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Text, TextInput, Button, HelperText, useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 
 const SUPABASE_ERRORS = {
@@ -20,6 +21,7 @@ function mapError(message) {
 export default function LoginScreen({ navigation }) {
   const { signIn } = useAuth();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -61,7 +63,10 @@ export default function LoginScreen({ navigation }) {
       style={[styles.root, { backgroundColor: theme.colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.header}>
           <Text
             variant="headlineMedium"
@@ -89,7 +94,7 @@ export default function LoginScreen({ navigation }) {
             style={styles.input}
             error={!!fieldErrors.email}
           />
-          <HelperText type="error" visible={!!fieldErrors.email}>
+          <HelperText type="error" visible={!!fieldErrors.email} style={styles.helperText}>
             {fieldErrors.email}
           </HelperText>
 
@@ -101,6 +106,7 @@ export default function LoginScreen({ navigation }) {
             mode="outlined"
             style={styles.input}
             error={!!fieldErrors.password}
+            autoCapitalize="none"
             right={
               <TextInput.Icon
                 icon={showPassword ? 'eye-off' : 'eye'}
@@ -108,11 +114,11 @@ export default function LoginScreen({ navigation }) {
               />
             }
           />
-          <HelperText type="error" visible={!!fieldErrors.password}>
+          <HelperText type="error" visible={!!fieldErrors.password} style={styles.helperText}>
             {fieldErrors.password}
           </HelperText>
 
-          <HelperText type="error" visible={!!authError} style={styles.authError}>
+          <HelperText type="error" visible={!!authError} style={[styles.helperText, styles.authError]}>
             {authError}
           </HelperText>
 
@@ -155,7 +161,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 48,
   },
   header: {
     marginBottom: 32,
@@ -173,6 +178,9 @@ const styles = StyleSheet.create({
   input: {
     fontFamily: 'Inter_400Regular',
     marginBottom: 0,
+  },
+  helperText: {
+    paddingHorizontal: 0,
   },
   authError: {
     marginBottom: 4,

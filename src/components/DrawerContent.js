@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Text, Divider, useTheme } from 'react-native-paper';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../context/AuthContext';
 
@@ -48,6 +49,7 @@ function DrawerItem({ icon, label, onPress, active, theme, disabled, loading }) 
 export default function DrawerContent({ navigation, state }) {
   const { user, signOut, toggleTheme, isDark } = useAuth();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const [signingOut, setSigningOut] = useState(false);
 
   const activeRouteName = state?.routes[state.index]?.name;
@@ -73,7 +75,7 @@ export default function DrawerContent({ navigation, state }) {
   return (
     <DrawerContentScrollView
       style={{ backgroundColor: theme.colors.surface }}
-      contentContainerStyle={styles.container}
+      contentContainerStyle={[styles.container, { paddingTop: insets.top + 16 }]}
     >
       <View style={[styles.profile, { borderBottomColor: theme.colors.outline }]}>
         <View style={styles.profileRow}>
@@ -154,7 +156,6 @@ export default function DrawerContent({ navigation, state }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 16,
   },
   profile: {
     paddingHorizontal: 20,
@@ -196,7 +197,6 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 12,
-    paddingBottom: 24,
   },
   item: {
     flexDirection: 'row',

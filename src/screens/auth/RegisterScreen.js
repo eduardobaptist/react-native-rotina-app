@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Text, TextInput, Button, HelperText, useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 
 const SUPABASE_ERRORS = {
@@ -20,6 +21,7 @@ function mapError(message) {
 export default function RegisterScreen({ navigation }) {
   const { signUp } = useAuth();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -68,7 +70,10 @@ export default function RegisterScreen({ navigation }) {
       style={[styles.root, { backgroundColor: theme.colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.header}>
           <Text
             variant="headlineMedium"
@@ -95,7 +100,7 @@ export default function RegisterScreen({ navigation }) {
             style={styles.input}
             error={!!fieldErrors.name}
           />
-          <HelperText type="error" visible={!!fieldErrors.name}>
+          <HelperText type="error" visible={!!fieldErrors.name} style={styles.helperText}>
             {fieldErrors.name}
           </HelperText>
 
@@ -110,7 +115,7 @@ export default function RegisterScreen({ navigation }) {
             style={styles.input}
             error={!!fieldErrors.email}
           />
-          <HelperText type="error" visible={!!fieldErrors.email}>
+          <HelperText type="error" visible={!!fieldErrors.email} style={styles.helperText}>
             {fieldErrors.email}
           </HelperText>
 
@@ -129,7 +134,7 @@ export default function RegisterScreen({ navigation }) {
               />
             }
           />
-          <HelperText type="error" visible={!!fieldErrors.password}>
+          <HelperText type="error" visible={!!fieldErrors.password} style={styles.helperText}>
             {fieldErrors.password}
           </HelperText>
 
@@ -148,12 +153,12 @@ export default function RegisterScreen({ navigation }) {
               />
             }
           />
-          <HelperText type="error" visible={!!fieldErrors.confirmPassword}>
+          <HelperText type="error" visible={!!fieldErrors.confirmPassword} style={styles.helperText}>
             {fieldErrors.confirmPassword}
           </HelperText>
 
           {authError ? (
-            <HelperText type="error" visible style={styles.feedback}>
+            <HelperText type="error" visible style={[styles.helperText, styles.feedback]}>
               {authError}
             </HelperText>
           ) : null}
@@ -197,7 +202,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 48,
   },
   header: {
     marginBottom: 32,
@@ -210,6 +214,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
   },
   form: {},
+  helperText: {
+    paddingHorizontal: 0,
+  },
   input: {
     fontFamily: 'Inter_400Regular',
   },
