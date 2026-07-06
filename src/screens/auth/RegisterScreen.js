@@ -62,7 +62,6 @@ export default function RegisterScreen({ navigation }) {
   function clearFieldError(field) {
     setFieldErrors(prev => ({ ...prev, [field]: '' }));
     setAuthError('');
-    setSuccessMessage('');
   }
 
   return (

@@ -1,13 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
-
-const PRIORITY_COLORS = {
-  light: { alta: '#DC2626', media: '#D97706', baixa: '#16A34A' },
-  dark:  { alta: '#F87171', media: '#FBBF24', baixa: '#4ADE80' },
-};
-
-const PRIORITY_LABELS = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
+import { PRIORITY_COLORS, PRIORITY_LABELS } from '../constants/priority';
 
 export default function PriorityBadge({ prioridade, isDark }) {
   const palette = isDark ? PRIORITY_COLORS.dark : PRIORITY_COLORS.light;

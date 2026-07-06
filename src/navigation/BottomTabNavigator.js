@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import MapScreen from '../screens/app/MapScreen';
 import TasksScreen from '../screens/app/TasksScreen';
 import HistoryScreen from '../screens/app/HistoryScreen';
 
@@ -14,6 +15,7 @@ export default function BottomTabNavigator() {
 
   return (
     <Tab.Navigator
+      initialRouteName="Map"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
@@ -31,6 +33,7 @@ export default function BottomTabNavigator() {
         },
         tabBarIcon: ({ color, size }) => {
           const icons = {
+            Map: 'map-outline',
             Tasks: 'checkmark-circle-outline',
             History: 'time-outline',
           };
@@ -38,6 +41,7 @@ export default function BottomTabNavigator() {
         },
       })}
     >
+      <Tab.Screen name="Map" component={MapScreen} options={{ title: 'Mapa' }} />
       <Tab.Screen name="Tasks" component={TasksScreen} options={{ title: 'Tarefas' }} />
       <Tab.Screen name="History" component={HistoryScreen} options={{ title: 'Histórico' }} />
     </Tab.Navigator>

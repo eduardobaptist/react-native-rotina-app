@@ -113,6 +113,13 @@ export default function DrawerContent({ navigation, state }) {
 
       <View style={styles.nav}>
         <DrawerItem
+          icon="map-outline"
+          label="Mapa"
+          active={false}
+          onPress={() => navigateToTab('Map')}
+          theme={theme}
+        />
+        <DrawerItem
           icon="checkmark-circle-outline"
           label="Tarefas"
           active={activeRouteName === 'MainTabs'}

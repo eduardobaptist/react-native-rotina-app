@@ -98,9 +98,14 @@ export default function TaskFormScreen({ route, navigation }) {
     try {
       let error;
       if (isEdit) {
+        const concluidaChanged = concluida !== (task?.concluida ?? false);
+        const concluidaEm = concluidaChanged
+          ? (concluida ? new Date().toISOString() : null)
+          : task?.concluida_em ?? null;
+
         ({ error } = await supabase
           .from('tarefas')
-          .update({ ...payload, concluida })
+          .update({ ...payload, concluida, concluida_em: concluidaEm })
           .eq('id', task.id)
           .eq('user_id', user.id));
       } else {

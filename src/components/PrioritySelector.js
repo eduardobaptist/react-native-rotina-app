@@ -28,6 +28,7 @@ export default function PrioritySelector({ value, onChange }) {
 const styles = StyleSheet.create({
   wrapper: {
     gap: 8,
+    marginTop: 25,
     marginBottom: 4,
   },
   label: {

@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Modal, StyleSheet, View } from 'react-native';
+import { Modal, Platform, StyleSheet, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { ActivityIndicator, Button, IconButton, Text, useTheme } from 'react-native-paper';
+import { Button, IconButton, Text, useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { distanceInMeters } from '../utils/geo';
 
 const DEFAULT_REGION = {
   latitude: -23.5505,
@@ -11,15 +13,62 @@ const DEFAULT_REGION = {
   longitudeDelta: 0.1,
 };
 
-function buildLocalName(r) {
+const NEARBY_PLACE_MAX_DISTANCE_METERS = 150;
+
+const ANDROID_PACKAGE_NAME = 'com.eduardobaptista.rotinaapp';
+// Places API is called via plain fetch, which doesn't go through the Maps SDK's native
+// attestation, so a key restricted to "Android apps" rejects it unless these two headers
+// are sent manually (Google's documented workaround for REST calls from a restricted app key).
+// This SHA-1 is the local debug.keystore's fingerprint — it must be registered on the API
+// key's Android restriction, and every other keystore (teammates, CI, release signing) needs
+// its own SHA-1 added there too, or Places requests from that keystore will keep failing.
+// Get it via: keytool -list -v -keystore android/app/debug.keystore -alias androiddebugkey -storepass android -keypass android
+const ANDROID_CERT_SHA1 = '5E8F16062EA3CD2C4A0D547876BAA6F38CABF625';
+
+function buildAddressName(r) {
   if (!r) return '';
   const parts = [r.name, r.district, r.city].filter(Boolean);
   const unique = parts.filter((v, i, arr) => arr.indexOf(v) === i);
   return unique.join(', ');
 }
 
+async function resolvePlaceName(coords) {
+  try {
+    const url =
+      'https://maps.googleapis.com/maps/api/place/nearbysearch/json' +
+      `?location=${coords.latitude},${coords.longitude}&rankby=distance&type=establishment` +
+      `&key=${process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}`;
+    const response = await fetch(url, {
+      headers:
+        Platform.OS === 'android'
+          ? { 'X-Android-Package': ANDROID_PACKAGE_NAME, 'X-Android-Cert': ANDROID_CERT_SHA1 }
+          : undefined,
+    });
+    const json = await response.json();
+    const nearest = json.results?.[0];
+
+    if (nearest?.name && nearest.geometry?.location) {
+      const distance = distanceInMeters(
+        coords.latitude,
+        coords.longitude,
+        nearest.geometry.location.lat,
+        nearest.geometry.location.lng
+      );
+      if (distance <= NEARBY_PLACE_MAX_DISTANCE_METERS) {
+        return nearest.name;
+      }
+    }
+  } catch (_) {
+    // falls back to street address below
+  }
+
+  const results = await Location.reverseGeocodeAsync(coords);
+  return buildAddressName(results[0]);
+}
+
 export default function LocationPickerModal({ visible, initialCoords, onConfirm, onDismiss }) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const mapRef = useRef(null);
   const [selected, setSelected] = useState(null);
   const [locating, setLocating] = useState(false);
@@ -27,7 +76,12 @@ export default function LocationPickerModal({ visible, initialCoords, onConfirm,
 
   useEffect(() => {
     if (!visible) return;
-    setSelected(initialCoords ?? null);
+    if (initialCoords) {
+      setSelected(initialCoords);
+    } else {
+      setSelected(null);
+      handleCurrentLocation();
+    }
   }, [visible]);
 
   function handleMapPress(e) {
@@ -52,8 +106,7 @@ export default function LocationPickerModal({ visible, initialCoords, onConfirm,
     if (!selected) return;
     setResolving(true);
     try {
-      const results = await Location.reverseGeocodeAsync(selected);
-      const nome_local = buildLocalName(results[0]);
+      const nome_local = await resolvePlaceName(selected);
       onConfirm({ latitude: selected.latitude, longitude: selected.longitude, nome_local });
     } finally {
       setResolving(false);
@@ -70,7 +123,11 @@ export default function LocationPickerModal({ visible, initialCoords, onConfirm,
         <View
           style={[
             styles.header,
-            { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.outline },
+            {
+              backgroundColor: theme.colors.surface,
+              borderBottomColor: theme.colors.outline,
+              paddingTop: insets.top,
+            },
           ]}
         >
           <IconButton
@@ -108,7 +165,11 @@ export default function LocationPickerModal({ visible, initialCoords, onConfirm,
         <View
           style={[
             styles.footer,
-            { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.outline },
+            {
+              backgroundColor: theme.colors.surface,
+              borderTopColor: theme.colors.outline,
+              paddingBottom: insets.bottom + 16,
+            },
           ]}
         >
           <Button
