@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, SectionList, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator, FAB, Text, useTheme } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -180,6 +180,13 @@ export default function HistoryScreen({ navigation }) {
           }
         />
       )}
+
+      <FAB
+        icon="plus"
+        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+        color={theme.colors.onPrimary ?? '#FFFFFF'}
+        onPress={() => navigation.navigate('TaskForm')}
+      />
     </View>
   );
 }
@@ -215,5 +222,10 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 10,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 24,
   },
 });

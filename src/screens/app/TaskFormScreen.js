@@ -12,6 +12,9 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import PrioritySelector from '../../components/PrioritySelector';
 import LocationPickerModal from '../../components/LocationPickerModal';
+import { refreshGeofences } from '../../services/geofencing';
+
+const DEFAULT_RAIO_NOTIFICACAO = 200;
 
 const SUPABASE_ERRORS = {
   'violates row-level security': 'Sem permissão para realizar esta ação',
@@ -37,6 +40,9 @@ export default function TaskFormScreen({ route, navigation }) {
   const [nomeLocal, setNomeLocal] = useState(task?.nome_local ?? '');
   const [latitude, setLatitude] = useState(task?.latitude ?? null);
   const [longitude, setLongitude] = useState(task?.longitude ?? null);
+  const [raioNotificacao, setRaioNotificacao] = useState(
+    String(task?.raio_notificacao_metros ?? DEFAULT_RAIO_NOTIFICACAO)
+  );
   const [mapVisible, setMapVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -93,6 +99,9 @@ export default function TaskFormScreen({ route, navigation }) {
       nome_local: nomeLocal.trim() || null,
       latitude: nomeLocal.trim() ? (latitude ?? null) : null,
       longitude: nomeLocal.trim() ? (longitude ?? null) : null,
+      raio_notificacao_metros: nomeLocal.trim()
+        ? (parseInt(raioNotificacao, 10) || DEFAULT_RAIO_NOTIFICACAO)
+        : null,
     };
 
     try {
@@ -117,6 +126,7 @@ export default function TaskFormScreen({ route, navigation }) {
       if (error) {
         setSubmitError(mapError(error.message));
       } else {
+        await refreshGeofences(user.id);
         navigation.goBack();
       }
     } catch (err) {
@@ -179,9 +189,22 @@ export default function TaskFormScreen({ route, navigation }) {
                 }
               />
               {hasCoords ? (
-                <HelperText type="info" visible style={styles.helperText}>
-                  {`Coordenadas: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`}
-                </HelperText>
+                <>
+                  <HelperText type="info" visible style={styles.helperText}>
+                    {`Coordenadas: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`}
+                  </HelperText>
+                  <TextInput
+                    label="Raio de notificação (metros)"
+                    value={raioNotificacao}
+                    onChangeText={setRaioNotificacao}
+                    mode="outlined"
+                    keyboardType="numeric"
+                    style={[styles.input, styles.locationInput]}
+                  />
+                  <HelperText type="info" visible style={styles.helperText}>
+                    Você será notificado ao chegar perto desse local
+                  </HelperText>
+                </>
               ) : (
                 <View style={styles.locationHint}>
                   <Text style={[styles.locationHintText, { color: theme.colors.onSurfaceVariant }]}>

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { refreshGeofences } from '../../services/geofencing';
 import TaskItem from '../../components/TaskItem';
 import SelectFilter from '../../components/SelectFilter';
 import { getPriorityFilterOptions } from '../../constants/priority';
@@ -76,6 +77,7 @@ export default function TasksScreen({ navigation }) {
 
     if (!error) {
       fetchTarefas();
+      refreshGeofences(user.id);
     }
   };
 
@@ -88,6 +90,7 @@ export default function TasksScreen({ navigation }) {
 
     if (!error) {
       setTarefas(prev => prev.filter(t => t.id !== id));
+      refreshGeofences(user.id);
     }
   };
 

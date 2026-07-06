@@ -15,6 +15,9 @@ module.exports = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.eduardobaptista.rotinaapp',
+      infoPlist: {
+        UIBackgroundModes: ['location'],
+      },
     },
     android: {
       adaptiveIcon: {
@@ -32,6 +35,29 @@ module.exports = {
     web: {
       favicon: './assets/favicon.png',
     },
-    plugins: ['expo-font', 'expo-secure-store', '@react-native-community/datetimepicker'],
+    plugins: [
+      'expo-font',
+      'expo-secure-store',
+      '@react-native-community/datetimepicker',
+      [
+        'expo-location',
+        {
+          locationAlwaysAndWhenInUsePermission:
+            'O app usa sua localização para avisar quando você chegar perto de uma tarefa.',
+          locationAlwaysPermission:
+            'O app usa sua localização em segundo plano para avisar quando você chegar perto de uma tarefa.',
+          locationWhenInUsePermission:
+            'O app usa sua localização para mostrar e selecionar locais das tarefas.',
+          isAndroidBackgroundLocationEnabled: true,
+          isAndroidForegroundServiceEnabled: true,
+        },
+      ],
+      [
+        'expo-notifications',
+        {
+          icon: './assets/rotina-app-icon.png',
+        },
+      ],
+    ],
   },
 };

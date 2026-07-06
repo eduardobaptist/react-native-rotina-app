@@ -1,13 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Button, IconButton, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Button, FAB, IconButton, useTheme } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import TaskDetailCard from '../../components/TaskDetailCard';
 import { PRIORITY_COLORS } from '../../constants/priority';
+import { refreshGeofences } from '../../services/geofencing';
 
 const DEFAULT_REGION = {
   latitude: -23.5505,
@@ -16,7 +18,7 @@ const DEFAULT_REGION = {
   longitudeDelta: 0.1,
 };
 
-export default function MapScreen() {
+export default function MapScreen({ route, navigation }) {
   const theme = useTheme();
   const { user, isDark } = useAuth();
   const insets = useSafeAreaInsets();
@@ -58,6 +60,7 @@ export default function MapScreen() {
       if (!error) {
         setSelectedTask(null);
         fetchTasks();
+        refreshGeofences(user.id);
       }
     } finally {
       setCompleting(false);
@@ -65,13 +68,51 @@ export default function MapScreen() {
   }
 
   useEffect(() => {
-    if (tasks.length > 0) {
-      mapRef.current?.fitToCoordinates(
-        tasks.map(t => ({ latitude: t.latitude, longitude: t.longitude })),
-        { edgePadding: { top: 80, right: 80, bottom: 80, left: 80 }, animated: true }
-      );
+    if (loading) return;
+
+    const incomingTaskId = route?.params?.taskId;
+    if (incomingTaskId) {
+      const task = tasks.find(t => String(t.id) === String(incomingTaskId));
+      if (task) {
+        setSelectedTask(task);
+        mapRef.current?.animateToRegion({
+          latitude: task.latitude,
+          longitude: task.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
+        navigation.setParams({ taskId: undefined });
+        return;
+      }
     }
-  }, [tasks]);
+
+    if (tasks.length === 0) {
+      centerOnCurrentLocation();
+      return;
+    }
+
+    mapRef.current?.fitToCoordinates(
+      tasks.map(t => ({ latitude: t.latitude, longitude: t.longitude })),
+      { edgePadding: { top: 80, right: 80, bottom: 80, left: 80 }, animated: true }
+    );
+  }, [tasks, loading]);
+
+  async function centerOnCurrentLocation() {
+    try {
+      const { status } = await Location.getForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      mapRef.current?.animateToRegion({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      });
+    } catch (_) {
+      // sem permissão ou sem localização disponível — mantém a região padrão (DEFAULT_REGION)
+    }
+  }
 
   const palette = isDark ? PRIORITY_COLORS.dark : PRIORITY_COLORS.light;
 
@@ -93,6 +134,13 @@ export default function MapScreen() {
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       )}
+
+      <FAB
+        icon="plus"
+        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+        color={theme.colors.onPrimary ?? '#FFFFFF'}
+        onPress={() => navigation.navigate('TaskForm')}
+      />
 
       {!!selectedTask && (
         <View
@@ -162,5 +210,10 @@ const styles = StyleSheet.create({
   completeButton: {
     borderRadius: 10,
     marginTop: 16,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 24,
   },
 });
