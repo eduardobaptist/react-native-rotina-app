@@ -27,6 +27,8 @@ const ANDROID_CERT_SHA1 = '5E8F16062EA3CD2C4A0D547876BAA6F38CABF625';
 
 function buildAddressName(r) {
   if (!r) return '';
+  const streetLine = [r.street, r.streetNumber].filter(Boolean).join(', ');
+  if (streetLine) return streetLine;
   const parts = [r.name, r.district, r.city].filter(Boolean);
   const unique = parts.filter((v, i, arr) => arr.indexOf(v) === i);
   return unique.join(', ');
@@ -72,7 +74,8 @@ export default function LocationPickerModal({ visible, initialCoords, onConfirm,
   const mapRef = useRef(null);
   const [selected, setSelected] = useState(null);
   const [locating, setLocating] = useState(false);
-  const [resolving, setResolving] = useState(false);
+  const [placeName, setPlaceName] = useState('');
+  const [resolvingName, setResolvingName] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -80,9 +83,29 @@ export default function LocationPickerModal({ visible, initialCoords, onConfirm,
       setSelected(initialCoords);
     } else {
       setSelected(null);
+      setPlaceName('');
       handleCurrentLocation();
     }
   }, [visible]);
+
+  useEffect(() => {
+    if (!selected) {
+      setPlaceName('');
+      return;
+    }
+    let cancelled = false;
+    setResolvingName(true);
+    resolvePlaceName(selected)
+      .then((name) => {
+        if (!cancelled) setPlaceName(name);
+      })
+      .finally(() => {
+        if (!cancelled) setResolvingName(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selected]);
 
   function handleMapPress(e) {
     setSelected(e.nativeEvent.coordinate);
@@ -102,15 +125,9 @@ export default function LocationPickerModal({ visible, initialCoords, onConfirm,
     }
   }
 
-  async function handleConfirm() {
-    if (!selected) return;
-    setResolving(true);
-    try {
-      const nome_local = await resolvePlaceName(selected);
-      onConfirm({ latitude: selected.latitude, longitude: selected.longitude, nome_local });
-    } finally {
-      setResolving(false);
-    }
+  function handleConfirm() {
+    if (!selected || resolvingName) return;
+    onConfirm({ latitude: selected.latitude, longitude: selected.longitude, nome_local: placeName });
   }
 
   const region = selected
@@ -148,7 +165,9 @@ export default function LocationPickerModal({ visible, initialCoords, onConfirm,
         <View style={[styles.hint, { backgroundColor: theme.colors.surfaceVariant }]}>
           <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
             {selected
-              ? `Ponto selecionado · ${selected.latitude.toFixed(5)}, ${selected.longitude.toFixed(5)}`
+              ? resolvingName
+                ? 'Buscando local...'
+                : placeName || 'Local selecionado'
               : 'Toque no mapa para selecionar um ponto'}
           </Text>
         </View>
@@ -177,7 +196,7 @@ export default function LocationPickerModal({ visible, initialCoords, onConfirm,
             icon={locating ? undefined : 'crosshairs-gps'}
             onPress={handleCurrentLocation}
             loading={locating}
-            disabled={locating || resolving}
+            disabled={locating || resolvingName}
             style={styles.footerBtn}
           >
             Minha localização
@@ -185,8 +204,8 @@ export default function LocationPickerModal({ visible, initialCoords, onConfirm,
           <Button
             mode="contained"
             onPress={handleConfirm}
-            loading={resolving}
-            disabled={!selected || resolving || locating}
+            loading={resolvingName}
+            disabled={!selected || resolvingName || locating}
             style={styles.footerBtn}
             labelStyle={styles.confirmLabel}
           >
